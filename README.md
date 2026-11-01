@@ -1,4 +1,4 @@
-# RoutineTweaks 0.1.0
+# RoutineTweaks 1.0.0
 
 Graphics add-on for **Routine** (PC, Steam), for ReShade with add-on support. Raises the game's
 lighting and detail settings beyond what its menu offers, live, from an in-game

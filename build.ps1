@@ -1,8 +1,12 @@
 # Builds bin\RoutineTweaks.addon64 with MSVC (Visual Studio 2022+ with C++ tools).
 # MSVC is required: ReShade is built with it, and MinGW returns API structs differently.
-# Usage: .\build.ps1 [-Install] [-GameBin <folder of Routine-Win64-Shipping.exe>]
+# Usage: .\build.ps1 [-Install] [-Package] [-GameBin <folder of Routine-Win64-Shipping.exe>]
+#   -Install  copies the add-on next to the game's exe (game closed).
+#   -Package  makes bin\release\RoutineTweaks-<version>.zip: the add-on, README, LICENSE
+#             and THIRD_PARTY_NOTICES.
 param(
     [switch]$Install,
+    [switch]$Package,
     [string]$GameBin = "E:\SteamLibrary\steamapps\common\Routine\Routine\Binaries\Win64"
 )
 $ErrorActionPreference = 'Stop'
@@ -36,4 +40,18 @@ if ($Install) {
     if (Get-Process ([IO.Path]::GetFileNameWithoutExtension($exe)) -ErrorAction SilentlyContinue) { throw "Close the game first." }
     Copy-Item $addon $GameBin -Force
     Write-Host "Installed to $GameBin"
+}
+
+if ($Package) {
+    $version = [regex]::Match((Get-Content "$root\src\version.h" -Raw), 'DT_VERSION "([^"]+)"').Groups[1].Value
+    $name = "RoutineTweaks-$version"
+    $stage = "$root\bin\release\$name"
+    if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
+    New-Item -ItemType Directory -Force $stage | Out-Null
+    Copy-Item $addon, "$root\README.md", "$root\LICENSE", "$root\THIRD_PARTY_NOTICES.txt" $stage
+    $zip = "$root\bin\release\$name.zip"
+    if (Test-Path $zip) { Remove-Item -Force $zip }
+    Compress-Archive -Path "$stage\*" -DestinationPath $zip
+    Write-Host "Packaged $zip"
+    Get-ChildItem $stage -File | ForEach-Object { "{0,-36} {1,10:N0}" -f $_.Name, $_.Length }
 }
